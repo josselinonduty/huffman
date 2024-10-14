@@ -1,14 +1,24 @@
+# Build
 bin
-.vscode
-*.code-workspace
+docs
+*.o
+CHANGELOG.md
 
+# Coverage
+*.gcda
+*.gcno
+*.gcov
+coverage/
+
+# Memory
+*.rpt
+
+# Temporary files
 *.tmp
 tmp.*
 *.log
 *.cache
 
-*.o
-docs
-*.cache
-
-CHANGELOG.md
+# IDE
+.vscode
+*.code-workspace
