@@ -1,0 +1,20 @@
+name: Test
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update
+        run: sudo apt-get update
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        run: sudo make install/debian
+
+      - name: Test
+        run: make tests
+
+      - name: Leaks
+        run: make debug/headless
