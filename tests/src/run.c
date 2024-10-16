@@ -27,6 +27,21 @@ int main(void)
 		return CU_get_error();
 	}
 
+	if (NULL ==
+	    CU_add_test(pSuite, "test_frequencies_instance",
+			test_frequencies_instance)
+	    || NULL == CU_add_test(pSuite, "test_frequencies_get_set",
+				   test_frequencies_get_set)
+	    || NULL == CU_add_test(pSuite, "test_statistic_instance",
+				   test_statistic_instance)
+	    || NULL == CU_add_test(pSuite, "test_statistic_copy",
+				   test_statistic_copy)
+	    || NULL == CU_add_test(pSuite, "test_statistic_compare",
+				   test_statistic_compare)) {
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+
 	CU_basic_set_mode(CU_BRM_VERBOSE);
 	CU_basic_run_tests();
 	CU_basic_show_failures(CU_get_failure_list());
