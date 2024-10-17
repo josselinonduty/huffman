@@ -10,44 +10,74 @@
 void encoding_table_destroy(encoding_table_t table)
 {
 	for (int i = 0; i < 256; i++) {
-		if (table[i] != NULL) {
-			binary_code_destroy(table[i]);
-		}
+		binary_code_destroy(&(table[i]));
 	}
 }
 
 binary_code binary_code_create()
 {
-	binary_code code = malloc(16 * sizeof(bit));
-	for (int i = 0; i < 16; i++) {
-		code[i] = -1;
+	binary_code code = {
+		.code = malloc(sizeof(unsigned char)),
+		.length = 0
+	};
+
+	if (code.code == NULL) {
+		fprintf(stderr,
+			"Failed to allocate memory for binary code: %s\n",
+			strerror(errno));
+		exit(EXIT_FAILURE);
 	}
+
 	return code;
 }
 
-void binary_code_destroy(binary_code code)
+void binary_code_destroy(binary_code *code)
 {
-	free(code);
+	free(code->code);
+	code->code = NULL;
+	code->length = 0;
 }
 
-void binary_code_set(binary_code code, int index, bit b)
+void __binary_code_resize(binary_code *code, int new_size)
 {
+	if (new_size <= code->length) {
+		return;
+	}
 
-	code[index] = (b & 0x1);
+	code->code = realloc(code->code, new_size * sizeof(unsigned char));
+
+	if (code->code == NULL) {
+		fprintf(stderr, "Failed to resize binary code: %s\n",
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+}
+
+void binary_code_set(binary_code *code, int index, bit b)
+{
+	__binary_code_resize(code, index + 1);
+
+	if (b) {
+		code->code[index] |= 0x01;
+	} else {
+		code->code[index] &= 0xFE;
+	}
+
+	code->length = index + 1;
 }
 
 bit binary_code_get(binary_code code, int index)
 {
-	return code[index] & 0x1;
+	if (index >= code.length) {
+		return -1;
+	}
+
+	return code.code[index] & 0x01;
 }
 
 int binary_code_length(binary_code code)
 {
-	int pos = 0;
-	while (code[pos] != -1 && pos < 16) {
-		pos++;
-	}
-	return pos;
+	return code.length;
 }
 
 void binary_code_print(binary_code code)
@@ -55,20 +85,24 @@ void binary_code_print(binary_code code)
 	for (int i = 0; i < binary_code_length(code); i++) {
 		printf("%d", binary_code_get(code, i));
 	}
+
+	printf("\n");
 }
 
 binary_code binary_code_copy(binary_code code)
 {
 	binary_code copy = binary_code_create();
 
+	__binary_code_resize(&copy, binary_code_length(code));
+
 	for (int i = 0; i < binary_code_length(code); i++) {
-		binary_code_set(copy, i, binary_code_get(code, i));
+		binary_code_set(&copy, i, binary_code_get(code, i));
 	}
 
 	return copy;
 }
 
-void binary_code_free(binary_code code)
+void binary_code_free(binary_code *code)
 {
 	binary_code_destroy(code);
 }
