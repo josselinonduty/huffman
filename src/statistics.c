@@ -24,6 +24,13 @@ int frequencies_destroy(frequency_table_t *table)
 	return 0;
 }
 
+int frequencies_set(frequency_table_t table, symbol_t symbol,
+		    frequency_t frequency)
+{
+	table[symbol] = frequency;
+	return 0;
+}
+
 int frequencies_increment(frequency_table_t table, symbol_t symbol)
 {
 	table[symbol]++;

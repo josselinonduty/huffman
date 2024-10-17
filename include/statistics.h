@@ -11,6 +11,7 @@ typedef frequency_t *frequency_table_t;
 
 int frequencies_create(frequency_table_t *table);
 int frequencies_destroy(frequency_table_t *table);
+int frequencies_set(frequency_table_t table, symbol_t symbol, frequency_t frequency);
 int frequencies_increment(frequency_table_t table, symbol_t symbol);
 frequency_t frequencies_get(frequency_table_t table, symbol_t symbol);
 
