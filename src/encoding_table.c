@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "encoding_table.h"
-#include "shared.h"
+#include "huffman/encoding_table.h"
+#include "huffman/huffman.h"
 
 void encoding_table_destroy(encoding_table_t table)
 {

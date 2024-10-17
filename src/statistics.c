@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "shared.h"
-#include "statistics.h"
+#include "huffman/huffman.h"
+#include "huffman/statistics.h"
 
 int frequencies_create(frequency_table_t *table)
 {

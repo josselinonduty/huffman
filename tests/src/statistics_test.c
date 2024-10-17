@@ -1,8 +1,8 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "shared.h"
-#include "statistics.h"
+#include "huffman/huffman.h"
+#include "huffman/statistics.h"
 #include "statistics_test.h"
 
 void test_frequencies_instance(void)

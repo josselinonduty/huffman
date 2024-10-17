@@ -5,7 +5,7 @@
 
 #include "base/generic.h"
 #include "datatypes/binary_tree.h"
-#include "statistics.h"
+#include "huffman/statistics.h"
 
 typedef binary_tree huffman_tree_t;
 

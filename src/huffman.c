@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "encoding_table.h"
-#include "huffman_tree.h"
-#include "shared.h"
-#include "statistics.h"
+#include "huffman/encoding_table.h"
+#include "huffman/huffman.h"
+#include "huffman/huffman_tree.h"
+#include "huffman/statistics.h"
 #include "types/queue.h"
 
 void usage(const char *progname)
@@ -77,36 +77,36 @@ huffman_tree_t *build_huffman_tree(queue *queue)
 
 void build_encoding_table_recursive(const huffman_tree_t huffman_tree,
 				    encoding_table_t encoding_table,
-				    encoding_t encoding)
+				    encoding_t *encoding)
 {
 	if (NULL == huffman_tree || binary_tree_is_leaf(huffman_tree)) {
-		if (binary_code_length(encoding) < 1) {
+		if (binary_code_length(*encoding) < 1) {
 			binary_code_set(encoding, 0, 1);
 		}
 
 		encoding_table[huffman_tree_get_data(huffman_tree)->symbol] =
-		    encoding;
+		    *encoding;
 		return;
 	}
 
-	encoding_t encodingLeft = binary_code_copy(encoding);
-	encoding_t encodingRight = binary_code_copy(encoding);
+	encoding_t encodingLeft = binary_code_copy(*encoding);
+	encoding_t encodingRight = binary_code_copy(*encoding);
 	binary_code_destroy(encoding);
 
 	if (huffman_tree_get_left(huffman_tree) != NULL) {
-		binary_code_set(encodingLeft, binary_code_length(encodingLeft),
+		binary_code_set(&encodingLeft, binary_code_length(encodingLeft),
 				0);
 		build_encoding_table_recursive(huffman_tree_get_left
 					       (huffman_tree), encoding_table,
-					       encodingLeft);
+					       &encodingLeft);
 	}
 
 	if (huffman_tree_get_right(huffman_tree) != NULL) {
-		binary_code_set(encodingRight,
+		binary_code_set(&encodingRight,
 				binary_code_length(encodingRight), 1);
 		build_encoding_table_recursive(huffman_tree_get_right
 					       (huffman_tree), encoding_table,
-					       encodingRight);
+					       &encodingRight);
 	}
 }
 
@@ -114,7 +114,7 @@ int build_encoding_table(const huffman_tree_t huffman_tree,
 			 encoding_table_t table)
 {
 	encoding_t encoding = binary_code_create();
-	build_encoding_table_recursive(huffman_tree, table, encoding);
+	build_encoding_table_recursive(huffman_tree, table, &encoding);
 
 	return 0;
 }

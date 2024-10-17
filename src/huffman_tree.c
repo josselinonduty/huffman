@@ -3,8 +3,8 @@
 
 #include "base/generic.h"
 #include "datatypes/binary_tree.h"
-#include "huffman_tree.h"
-#include "statistics.h"
+#include "huffman/huffman_tree.h"
+#include "huffman/statistics.h"
 
 huffman_tree_t huffman_tree_create(any value)
 {

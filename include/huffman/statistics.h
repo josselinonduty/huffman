@@ -4,9 +4,8 @@
 #include <stdbool.h>
 
 #include "base/generic.h"
-#include "shared.h"
+#include "huffman/huffman.h"
 
-typedef unsigned long frequency_t;
 typedef frequency_t *frequency_table_t;
 
 int frequencies_create(frequency_table_t *table);
