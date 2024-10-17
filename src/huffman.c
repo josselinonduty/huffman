@@ -99,8 +99,8 @@ void build_encoding_table_recursive(const huffman_tree_t huffman_tree,
 				    encoding_t *encoding)
 {
 	if (NULL == huffman_tree || binary_tree_is_leaf(huffman_tree)) {
-		if (binary_code_length(*encoding) < 1) {
-			binary_code_set(encoding, 0, 1);
+		if (encoding_length(*encoding) < 1) {
+			encoding_set(encoding, 0, 1);
 		}
 
 		encoding_table[huffman_tree_get_data(huffman_tree)->symbol] =
@@ -108,21 +108,19 @@ void build_encoding_table_recursive(const huffman_tree_t huffman_tree,
 		return;
 	}
 
-	encoding_t encodingLeft = binary_code_copy(*encoding);
-	encoding_t encodingRight = binary_code_copy(*encoding);
-	binary_code_destroy(encoding);
+	encoding_t encodingLeft = encoding_copy(*encoding);
+	encoding_t encodingRight = encoding_copy(*encoding);
+	encoding_destroy(encoding);
 
 	if (huffman_tree_get_left(huffman_tree) != NULL) {
-		binary_code_set(&encodingLeft, binary_code_length(encodingLeft),
-				0);
+		encoding_set(&encodingLeft, encoding_length(encodingLeft), 0);
 		build_encoding_table_recursive(huffman_tree_get_left
 					       (huffman_tree), encoding_table,
 					       &encodingLeft);
 	}
 
 	if (huffman_tree_get_right(huffman_tree) != NULL) {
-		binary_code_set(&encodingRight,
-				binary_code_length(encodingRight), 1);
+		encoding_set(&encodingRight, encoding_length(encodingRight), 1);
 		build_encoding_table_recursive(huffman_tree_get_right
 					       (huffman_tree), encoding_table,
 					       &encodingRight);
@@ -132,7 +130,7 @@ void build_encoding_table_recursive(const huffman_tree_t huffman_tree,
 int build_encoding_table(const huffman_tree_t huffman_tree,
 			 encoding_table_t table)
 {
-	encoding_t encoding = binary_code_create();
+	encoding_t encoding = encoding_create();
 	build_encoding_table_recursive(huffman_tree, table, &encoding);
 
 	return 0;
@@ -186,8 +184,8 @@ void write_file(const char *filename, char *output_filename,
 	while ((c = fgetc(input)) != EOF) {
 		encoding_t encoding = encoding_table[c];
 
-		for (int i = 0; i < binary_code_length(encoding); i++) {
-			bit b = binary_code_get(encoding, i);
+		for (int i = 0; i < encoding_length(encoding); i++) {
+			bit b = encoding_get(encoding, i);
 			buffer = (buffer << 1) | b;
 			buffer_length++;
 

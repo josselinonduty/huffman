@@ -10,13 +10,13 @@
 void encoding_table_destroy(encoding_table_t table)
 {
 	for (int i = 0; i < 256; i++) {
-		binary_code_destroy(&(table[i]));
+		encoding_destroy(&(table[i]));
 	}
 }
 
-binary_code binary_code_create()
+encoding_t encoding_create()
 {
-	binary_code code = {
+	encoding_t code = {
 		.code = malloc(sizeof(unsigned char)),
 		.length = 0
 	};
@@ -31,14 +31,14 @@ binary_code binary_code_create()
 	return code;
 }
 
-void binary_code_destroy(binary_code *code)
+void encoding_destroy(encoding_t *code)
 {
 	free(code->code);
 	code->code = NULL;
 	code->length = 0;
 }
 
-void __binary_code_resize(binary_code *code, int new_size)
+void __encoding_resize(encoding_t *code, int new_size)
 {
 	if (new_size <= code->length) {
 		return;
@@ -53,9 +53,9 @@ void __binary_code_resize(binary_code *code, int new_size)
 	}
 }
 
-void binary_code_set(binary_code *code, int index, bit b)
+void encoding_set(encoding_t *code, int index, bit b)
 {
-	__binary_code_resize(code, index + 1);
+	__encoding_resize(code, index + 1);
 
 	if (b) {
 		code->code[index] |= 0x01;
@@ -66,7 +66,7 @@ void binary_code_set(binary_code *code, int index, bit b)
 	code->length = index + 1;
 }
 
-bit binary_code_get(binary_code code, int index)
+bit encoding_get(encoding_t code, int index)
 {
 	if (index >= code.length) {
 		return -1;
@@ -75,46 +75,46 @@ bit binary_code_get(binary_code code, int index)
 	return code.code[index] & 0x01;
 }
 
-int binary_code_length(binary_code code)
+int encoding_length(encoding_t code)
 {
 	return code.length;
 }
 
-void binary_code_print(binary_code code)
+void encoding_print(encoding_t code)
 {
-	for (int i = 0; i < binary_code_length(code); i++) {
-		printf("%d", binary_code_get(code, i));
+	for (int i = 0; i < encoding_length(code); i++) {
+		printf("%d", encoding_get(code, i));
 	}
 
 	printf("\n");
 }
 
-binary_code binary_code_copy(binary_code code)
+encoding_t encoding_copy(encoding_t code)
 {
-	binary_code copy = binary_code_create();
+	encoding_t copy = encoding_create();
 
-	__binary_code_resize(&copy, binary_code_length(code));
+	__encoding_resize(&copy, encoding_length(code));
 
-	for (int i = 0; i < binary_code_length(code); i++) {
-		binary_code_set(&copy, i, binary_code_get(code, i));
+	for (int i = 0; i < encoding_length(code); i++) {
+		encoding_set(&copy, i, encoding_get(code, i));
 	}
 
 	return copy;
 }
 
-void binary_code_free(binary_code *code)
+void encoding_free(encoding_t *code)
 {
-	binary_code_destroy(code);
+	encoding_destroy(code);
 }
 
-bool binary_code_compare(binary_code a, binary_code b)
+bool encoding_compare(encoding_t a, encoding_t b)
 {
-	if (binary_code_length(a) != binary_code_length(b)) {
+	if (encoding_length(a) != encoding_length(b)) {
 		return false;
 	}
 
-	for (int i = 0; i < binary_code_length(a); i++) {
-		if (binary_code_get(a, i) != binary_code_get(b, i)) {
+	for (int i = 0; i < encoding_length(a); i++) {
+		if (encoding_get(a, i) != encoding_get(b, i)) {
 			return false;
 		}
 	}

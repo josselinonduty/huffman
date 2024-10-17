@@ -6,24 +6,23 @@
 #include "huffman/huffman.h"
 
 typedef unsigned char bit;
-typedef struct binary_code {
+typedef struct encoding_t {
     unsigned char *code;
     unsigned char length;
-} binary_code;
-typedef binary_code encoding_t;
-typedef binary_code *encoding_table_t;
+} encoding_t;
+typedef encoding_t *encoding_table_t;
 
 void encoding_table_destroy(encoding_table_t table);
 
-binary_code binary_code_create(void);
-void binary_code_destroy(binary_code *code);
-void binary_code_set(binary_code *code, int index, bit b);
-bit binary_code_get(binary_code code, int index);
-int binary_code_length(binary_code code);
+encoding_t encoding_create(void);
+void encoding_destroy(encoding_t *code);
+void encoding_set(encoding_t *code, int index, bit b);
+bit encoding_get(encoding_t code, int index);
+int encoding_length(encoding_t code);
 
-void binary_code_print(binary_code code);
-binary_code binary_code_copy(binary_code code);
-void binary_code_free(binary_code *code);
-bool binary_code_compare(binary_code a, binary_code b);
+void encoding_print(encoding_t code);
+encoding_t encoding_copy(encoding_t code);
+void encoding_free(encoding_t *code);
+bool encoding_compare(encoding_t a, encoding_t b);
 
 #endif
