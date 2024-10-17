@@ -8,10 +8,29 @@
 #include "huffman/statistics.h"
 #include "types/queue.h"
 
-void usage(const char *progname)
+void usage(const char *progname, const char *subcommand)
 {
-	fprintf(stderr, "Usage: %s <compress|decompress> <filename>\n",
-		progname);
+	if (NULL == subcommand)
+		goto default_usage;
+
+	if (strcmp(subcommand, "compress") == 0) {
+		fprintf(stderr, "Usage: %s compress <input> [<output>]\n",
+			progname);
+		goto exit_program;
+	}
+
+	if (strcmp(subcommand, "decompress") == 0) {
+		fprintf(stderr, "Usage: %s decompress <input> <output>\n",
+			progname);
+		goto exit_program;
+	}
+
+ default_usage:
+	fprintf(stderr, "Usage:\n");
+	fprintf(stderr, "  %s compress <input> [<output>]\n", progname);
+	fprintf(stderr, "  %s decompress <input> <output>\n", progname);
+
+ exit_program:
 	exit(1);
 }
 
@@ -119,13 +138,18 @@ int build_encoding_table(const huffman_tree_t huffman_tree,
 	return 0;
 }
 
-void write_file(const char *filename, frequency_table_t frequency_table,
+void write_file(const char *filename, char *output_filename,
+		frequency_table_t frequency_table,
 		encoding_table_t encoding_table)
 {
-	char *output_filename = malloc(strlen(filename) + 6);
-	strcpy(output_filename, filename);
-	strcat(output_filename, ".huff");
-	output_filename[strlen(filename) + 5] = '\0';
+	int has_output_filename = 1;
+	if (NULL == output_filename) {
+		has_output_filename = 0;
+		output_filename = malloc(strlen(filename) + 6);
+		strcpy(output_filename, filename);
+		strcat(output_filename, ".huff");
+		output_filename[strlen(filename) + 5] = '\0';
+	}
 
 	FILE *input = fopen(filename, "r");
 	FILE *output = fopen(output_filename, "w");
@@ -182,10 +206,12 @@ void write_file(const char *filename, frequency_table_t frequency_table,
 
 	fclose(input);
 	fclose(output);
-	free(output_filename);
+
+	if (0 == has_output_filename)
+		free(output_filename);
 }
 
-int compress(const char *filename)
+int compress(const char *filename, char *output_filename)
 {
 	frequency_table_t frequency_table;
 	frequencies_create(&frequency_table);
@@ -207,7 +233,7 @@ int compress(const char *filename)
 	build_encoding_table(*huffman_tree, encoding_table);
 	huffman_tree_free(huffman_tree);
 
-	write_file(filename, frequency_table, encoding_table);
+	write_file(filename, output_filename, frequency_table, encoding_table);
 	frequencies_destroy(&frequency_table);
 
 	encoding_table_destroy(encoding_table);
@@ -215,26 +241,28 @@ int compress(const char *filename)
 	return 0;
 }
 
-int decompress(const char *filename)
+int decompress(const char *filename, char *output_filename)
 {
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc < 3) {
-		usage(argv[0]);
-		exit(1);
-	}
+	if (argc < 2)
+		usage(argv[0], NULL);
 
 	if (strcmp(argv[1], "compress") == 0) {
-		compress(argv[2]);
+		if (argc < 3)
+			usage(argv[0], "compress");
+
+		compress(argv[2], argv[3]);
 	} else if (strcmp(argv[1], "decompress") == 0) {
-		decompress(argv[2]);
-	} else {
-		usage(argv[0]);
-		exit(1);
-	}
+		if (argc < 4)
+			usage(argv[0], "decompress");
+
+		decompress(argv[2], argv[3]);
+	} else
+		usage(argv[0], NULL);
 
 	return 0;
 }
