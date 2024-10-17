@@ -4,6 +4,10 @@ docs
 *.o
 CHANGELOG.md
 
+# Run
+*.out
+*.huff
+
 # Coverage
 *.gcda
 *.gcno

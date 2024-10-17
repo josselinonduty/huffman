@@ -118,6 +118,7 @@ clean/objects:
 	@rm -f ./$(TESTDIR)/$(SRCDIR)/*.o
 
 clean/exec:
+	@rm -f ./$(BINDIR)/$(EXEC)
 	@rm -f ./$(TESTDIR)/$(BINDIR)/$(TEST)
 
 clean/docs:
