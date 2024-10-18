@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "huffman/encoding_table.h"
 #include "huffman/huffman.h"
@@ -136,9 +137,9 @@ int build_encoding_table(const huffman_tree_t huffman_tree,
 	return 0;
 }
 
-void write_file(const char *filename, char *output_filename,
-		frequency_table_t frequency_table,
-		encoding_table_t encoding_table)
+void write_compressed_file(const char *filename, char *output_filename,
+			   frequency_table_t frequency_table,
+			   encoding_table_t encoding_table)
 {
 	int has_output_filename = 1;
 	if (NULL == output_filename) {
@@ -165,13 +166,13 @@ void write_file(const char *filename, char *output_filename,
 	fwrite(&file_length, sizeof(file_length), 1, output);
 	fseek(input, 0, SEEK_SET);
 	// Number of symbols
-	int symbols = 0;
+	int symbol_count = 0;
 	for (int i = 0; i < 256; i++) {
 		if (0 != frequency_table[i]) {
-			symbols++;
+			symbol_count++;
 		}
 	}
-	fwrite(&symbols, sizeof(symbols), 1, output);
+	fwrite(&symbol_count, 2 * sizeof(char), 1, output);
 	// Frequencies
 	for (int i = 0; i < 256; i++) {
 		if (0 != frequency_table[i]) {
@@ -211,6 +212,8 @@ void write_file(const char *filename, char *output_filename,
 
 int compress(const char *filename, char *output_filename)
 {
+	clock_t start = clock();
+
 	frequency_table_t frequency_table;
 	frequencies_create(&frequency_table);
 
@@ -231,16 +234,114 @@ int compress(const char *filename, char *output_filename)
 	build_encoding_table(*huffman_tree, encoding_table);
 	huffman_tree_free(huffman_tree);
 
-	write_file(filename, output_filename, frequency_table, encoding_table);
+	write_compressed_file(filename, output_filename, frequency_table,
+			      encoding_table);
 	frequencies_destroy(&frequency_table);
 
 	encoding_table_destroy(encoding_table);
 
+	clock_t end = clock();
+	double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+
+	printf("Elapsed time: %.2fs\n", elapsed);
 	return 0;
+}
+
+int read_compressed_file(FILE *file, long unsigned int *file_length,
+			 int *symbol_count, frequency_table_t *frequency_table)
+{
+	frequencies_create(frequency_table);
+
+	char magic[4];
+	if (fread(magic, sizeof(char), 4, file) != 4)
+		return -1;
+	if (0 != strncmp(magic, "HUFF", 4))
+		return -1;
+
+	if (fread(file_length, sizeof(*file_length), 1, file) != 1)
+		return -1;
+
+	if (fread(symbol_count, 2 * sizeof(char), 1, file) != 1)
+		return -1;
+
+	for (int i = 0; i < *symbol_count; i++) {
+		unsigned char symbol = 0;
+		long unsigned int frequency = 0;
+		if (fread(&symbol, sizeof(symbol), 1, file) != 1)
+			return -1;
+		if (fread(&frequency, sizeof(frequency), 1, file) != 1)
+			return -1;
+		frequencies_set(*frequency_table, symbol, frequency);
+	}
+
+	return 0;
+}
+
+void write_file(FILE *file, FILE *output,
+		long unsigned int file_length,
+		const huffman_tree_t *huffman_tree)
+{
+	huffman_tree_t current = *huffman_tree;
+	long unsigned int symbols_found = 0;
+	int c;
+	while (symbols_found < file_length) {
+		c = fgetc(file);
+
+		for (int i = 0; i < 8; i++) {
+			if (binary_tree_is_leaf(current)) {
+				symbols_found++;
+				statistic_t *statistic =
+				    huffman_tree_get_data(current);
+				fputc(statistic->symbol, output);
+				if (symbols_found == file_length)
+					break;
+				current = *huffman_tree;
+			}
+
+			bit b = (c >> (7 - i)) & 1;
+			if (b == 0)
+				current = huffman_tree_get_left(current);
+			else
+				current = huffman_tree_get_right(current);
+		}
+	}
 }
 
 int decompress(const char *filename, char *output_filename)
 {
+	clock_t start = clock();
+
+	FILE *input = fopen(filename, "r");
+	if (NULL == input)
+		return -1;
+
+	long unsigned int file_length = 0;
+	int symbol_count = 0;
+	frequency_table_t frequency_table = NULL;
+
+	if (0 != read_compressed_file(input, &file_length, &symbol_count,
+				      &frequency_table))
+		return -1;
+
+	queue queue = build_queue(frequency_table);
+
+	huffman_tree_t *huffman_tree = build_huffman_tree(&queue);
+	queue_destroy(&queue);
+
+	FILE *output = fopen(output_filename, "w");
+
+	write_file(input, output, file_length, huffman_tree);
+
+	fclose(input);
+	fclose(output);
+	frequencies_destroy(&frequency_table);
+	huffman_tree_free(huffman_tree);
+
+	clock_t end = clock();
+	double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+
+	printf("Elapsed time: %.2fs\n", elapsed);
+
 	return 0;
 }
 
