@@ -305,35 +305,27 @@ void write_file(FILE *file, FILE *output,
 		const long unsigned int file_length,
 		const huffman_tree_t *huffman_tree)
 {
+	if (0 == file_length)
+		return;
+
 	huffman_tree_t current = *huffman_tree;
 	long unsigned int length = 0;
 
 	while (length < file_length) {
-		printf("\n");
 		int c = fgetc(file);
-		if (c == EOF)
-			break;
-		printf("c: ");
-		for (int i = 0; i < 8; i++) {
-			unsigned char bit = (c >> (7 - i)) & 0x1;
-			printf("%d", bit);
-		}
-		printf("\n");
 
 		int i = 0;
 		for (i = 0; i < 8; i++) {
 			unsigned char bit = (c >> (7 - i)) & 0x1;
-			printf("%d", bit);
 
 			if (binary_tree_is_leaf(current)) {
 				statistic_t *statistic =
 				    huffman_tree_get_data(current);
 				fputc(statistic->symbol, output);
-				statistic_print(statistic);
-				printf("\n");
 				length++;
 				if (length == file_length)
 					break;
+
 				current = *huffman_tree;
 			}
 
