@@ -11,18 +11,22 @@
 
 void usage(const char *progname, const char *subcommand)
 {
+	int code = EXIT_SUCCESS;
+
 	if (NULL == subcommand)
 		goto default_usage;
 
 	if (strcmp(subcommand, "compress") == 0) {
 		fprintf(stderr, "Usage: %s compress <input> [<output>]\n",
 			progname);
+		code = EXIT_FAILURE;
 		goto exit_program;
 	}
 
 	if (strcmp(subcommand, "decompress") == 0) {
 		fprintf(stderr, "Usage: %s decompress <input> <output>\n",
 			progname);
+		code = EXIT_FAILURE;
 		goto exit_program;
 	}
 
@@ -32,7 +36,7 @@ void usage(const char *progname, const char *subcommand)
 	fprintf(stderr, "  %s decompress <input> <output>\n", progname);
 
  exit_program:
-	exit(1);
+	exit(code);
 }
 
 void read_file(FILE *file, frequency_table_t table)
@@ -298,34 +302,48 @@ int read_compressed_file(FILE *file, long unsigned int *file_length,
 }
 
 void write_file(FILE *file, FILE *output,
-		long unsigned int file_length,
+		const long unsigned int file_length,
 		const huffman_tree_t *huffman_tree)
 {
-	if (0 == file_length)
-		return;
-
 	huffman_tree_t current = *huffman_tree;
-	long unsigned int symbols_found = 0;
-	int c;
-	while (symbols_found < file_length) {
-		c = fgetc(file);
+	long unsigned int length = 0;
 
+	while (length < file_length) {
+		printf("\n");
+		int c = fgetc(file);
+		if (c == EOF)
+			break;
+		printf("c: ");
 		for (int i = 0; i < 8; i++) {
+			unsigned char bit = (c >> (7 - i)) & 0x1;
+			printf("%d", bit);
+		}
+		printf("\n");
+
+		int i = 0;
+		for (i = 0; i < 8; i++) {
+			unsigned char bit = (c >> (7 - i)) & 0x1;
+			printf("%d", bit);
+
 			if (binary_tree_is_leaf(current)) {
-				symbols_found++;
 				statistic_t *statistic =
 				    huffman_tree_get_data(current);
 				fputc(statistic->symbol, output);
-				if (symbols_found == file_length)
+				statistic_print(statistic);
+				printf("\n");
+				length++;
+				if (length == file_length)
 					break;
 				current = *huffman_tree;
 			}
 
-			bit b = (c >> (7 - i)) & 1;
-			if (b == 0)
+			if (0 == bit)
 				current = huffman_tree_get_left(current);
 			else
 				current = huffman_tree_get_right(current);
+
+			if (NULL == current)
+				current = *huffman_tree;
 		}
 	}
 }
