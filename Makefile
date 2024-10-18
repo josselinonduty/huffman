@@ -41,9 +41,9 @@ COVR=gcovr
 #               Targets            
 # ---------------------------------
 
-.PHONY: all docs lint debug debug/headless build
+.PHONY: all docs lint debug debug/headless build build/lib
 .PHONY: tests coverage coverage/init install/debian changelog
-.PHONY: clean clean/objects clean/exec clean/docs clean/debug 
+.PHONY: clean/all clean clean/objects clean/exec clean/docs clean/debug 
 
 all: build
 
@@ -77,7 +77,10 @@ debug/headless: $(TESTDIR)/$(BINDIR)/$(TEST)
 			exit 1; \
 		fi;
 
-build: $(BINDIR)/$(EXEC)
+build: build/lib $(BINDIR)/$(EXEC)
+
+build/lib:
+	@make -C $(LIBDIR)/jlib
 
 $(BINDIR)/$(EXEC): $(OBJ)
 	@mkdir -p $(BINDIR)
@@ -110,6 +113,9 @@ coverage: coverage/init build tests
 
 coverage/init:
 	@mkdir -p $(COVDIR)
+
+clean/all: clean
+	@make -C $(LIBDIR)/jlib clean
 
 clean: clean/objects clean/exec clean/docs clean/debug clean/coverage
 
