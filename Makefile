@@ -87,7 +87,7 @@ $(BINDIR)/$(EXEC): $(OBJ)
 	@echo "Building $(BINDIR)/$(EXEC)..."
 	@$(CC) -o $(BINDIR)/$(EXEC) $(OBJ) $(LDFLAGS)
 
-tests: $(TESTDIR)/$(BINDIR)/$(TEST)
+tests: build/lib $(TESTDIR)/$(BINDIR)/$(TEST)
 	@./$(TESTDIR)/$(BINDIR)/$(TEST)
 
 $(TESTDIR)/$(BINDIR)/$(TEST): $(OBJTEST)
