@@ -151,12 +151,12 @@ void write_compressed_file(const char *filename, char *output_filename,
 	}
 
 	FILE *input = fopen(filename, "r");
+	if (NULL == input)
+		return;
+
 	FILE *output = fopen(output_filename, "w");
-
-	int c;
-
-	char buffer = 0;
-	int buffer_length = 0;
+	if (NULL == output)
+		return;
 
 	// "HUFF" magic number
 	fwrite("HUFF", sizeof(char), 4, output);
@@ -165,14 +165,19 @@ void write_compressed_file(const char *filename, char *output_filename,
 	long file_length = ftell(input);
 	fwrite(&file_length, sizeof(file_length), 1, output);
 	fseek(input, 0, SEEK_SET);
+
+	if (NULL == frequency_table || NULL == encoding_table) {
+		goto finalize;
+	}
 	// Number of symbols
-	int symbol_count = 0;
+	unsigned int symbol_count = 0;
 	for (int i = 0; i < 256; i++) {
 		if (0 != frequency_table[i]) {
 			symbol_count++;
 		}
 	}
-	fwrite(&symbol_count, 2 * sizeof(char), 1, output);
+	--symbol_count;
+	fwrite(&symbol_count, sizeof(char), 1, output);
 	// Frequencies
 	for (int i = 0; i < 256; i++) {
 		if (0 != frequency_table[i]) {
@@ -181,6 +186,10 @@ void write_compressed_file(const char *filename, char *output_filename,
 			       1, output);
 		}
 	}
+
+	int c;
+	char buffer = 0;
+	int buffer_length = 0;
 
 	while ((c = fgetc(input)) != EOF) {
 		encoding_t encoding = encoding_table[c];
@@ -203,6 +212,7 @@ void write_compressed_file(const char *filename, char *output_filename,
 		fwrite(&buffer, sizeof(char), 1, output);
 	}
 
+ finalize:;
 	fclose(input);
 	fclose(output);
 
@@ -230,15 +240,21 @@ int compress(const char *filename, char *output_filename)
 	huffman_tree_t *huffman_tree = build_huffman_tree(&queue);
 	queue_destroy(&queue);
 
+	if (NULL == huffman_tree) {
+		write_compressed_file(filename, output_filename, NULL, NULL);
+		goto finalize;
+	}
+
 	encoding_t encoding_table[256] = { 0 };
 	build_encoding_table(*huffman_tree, encoding_table);
 	huffman_tree_free(huffman_tree);
 
 	write_compressed_file(filename, output_filename, frequency_table,
 			      encoding_table);
-	frequencies_destroy(&frequency_table);
-
 	encoding_table_destroy(encoding_table);
+
+ finalize:;
+	frequencies_destroy(&frequency_table);
 
 	clock_t end = clock();
 	double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
@@ -248,10 +264,9 @@ int compress(const char *filename, char *output_filename)
 }
 
 int read_compressed_file(FILE *file, long unsigned int *file_length,
-			 int *symbol_count, frequency_table_t *frequency_table)
+			 unsigned int *symbol_count,
+			 frequency_table_t *frequency_table)
 {
-	frequencies_create(frequency_table);
-
 	char magic[4];
 	if (fread(magic, sizeof(char), 4, file) != 4)
 		return -1;
@@ -261,9 +276,14 @@ int read_compressed_file(FILE *file, long unsigned int *file_length,
 	if (fread(file_length, sizeof(*file_length), 1, file) != 1)
 		return -1;
 
-	if (fread(symbol_count, 2 * sizeof(char), 1, file) != 1)
-		return -1;
+	if (0 == *file_length)
+		return 0;
 
+	if (fread(symbol_count, sizeof(char), 1, file) != 1)
+		return -1;
+	(*symbol_count)++;
+
+	frequencies_create(frequency_table);
 	for (int i = 0; i < *symbol_count; i++) {
 		unsigned char symbol = 0;
 		long unsigned int frequency = 0;
@@ -281,6 +301,9 @@ void write_file(FILE *file, FILE *output,
 		long unsigned int file_length,
 		const huffman_tree_t *huffman_tree)
 {
+	if (0 == file_length)
+		return;
+
 	huffman_tree_t current = *huffman_tree;
 	long unsigned int symbols_found = 0;
 	int c;
@@ -316,24 +339,28 @@ int decompress(const char *filename, char *output_filename)
 		return -1;
 
 	long unsigned int file_length = 0;
-	int symbol_count = 0;
+	unsigned int symbol_count = 0;
 	frequency_table_t frequency_table = NULL;
 
 	if (0 != read_compressed_file(input, &file_length, &symbol_count,
 				      &frequency_table))
 		return -1;
 
-	queue queue = build_queue(frequency_table);
+	huffman_tree_t *huffman_tree = NULL;
+	if (0 == file_length)
+		goto _out;
 
-	huffman_tree_t *huffman_tree = build_huffman_tree(&queue);
+	queue queue = build_queue(frequency_table);
+	huffman_tree = build_huffman_tree(&queue);
 	queue_destroy(&queue);
 
+ _out:	;
 	FILE *output = fopen(output_filename, "w");
-
 	write_file(input, output, file_length, huffman_tree);
 
 	fclose(input);
 	fclose(output);
+
 	frequencies_destroy(&frequency_table);
 	huffman_tree_free(huffman_tree);
 

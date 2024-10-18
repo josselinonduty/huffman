@@ -79,6 +79,9 @@ bool huffman_tree_compare(any a, any b)
 
 void huffman_tree_free(any tree)
 {
+	if (tree == NULL)
+		return;
+
 	huffman_tree_destroy((huffman_tree_t *) tree);
 	free(tree);
 }

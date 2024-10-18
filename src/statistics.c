@@ -18,6 +18,9 @@ int frequencies_create(frequency_table_t *table)
 
 int frequencies_destroy(frequency_table_t *table)
 {
+	if (NULL == *table)
+		return 0;
+
 	free(*table);
 	*table = NULL;
 
