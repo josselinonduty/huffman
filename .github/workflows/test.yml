@@ -9,12 +9,54 @@ jobs:
       - name: Update
         run: sudo apt-get update
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       
       - name: Install
-        run: sudo make install/debian
+        run: |
+          sudo make install/debian
 
       - name: Test
-        run: make tests
+        run: |
+          make tests
 
-      - name: Leaks
-        run: make debug/headless
+      - name: Test for memory leaks
+        run: |
+          make debug/headless
+
+  prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update
+        run: sudo apt-get update
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      
+      - name: Install
+        run: |
+          sudo make install/debian
+
+      - name: Build
+        run: |
+          make
+
+      - name: Test for memory leaks (compression)
+        run: |
+          make production/debug/headless INPUT="./examples/empty.txt" OUTPUT="./bin/empty.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/ascii.txt" OUTPUT="./bin/ascii.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/lorem.txt" OUTPUT="./bin/lorem.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/faker.json" OUTPUT="./bin/faker.json.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/faker.zip" OUTPUT="./bin/faker.zip.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/symbol_1.txt" OUTPUT="./bin/symbol_1.huff" SUBCOMMAND="compress"
+          make production/debug/headless INPUT="./examples/symbol_100.txt" OUTPUT="./bin/symbol_100.huff" SUBCOMMAND="compress"
+
+      - name: Test for memory leaks (decompression)
+        run: |
+          make production/debug/headless INPUT="./bin/empty.huff" OUTPUT="./bin/empty.txt" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/ascii.huff" OUTPUT="./bin/ascii.txt" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/lorem.huff" OUTPUT="./bin/lorem.txt" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/faker.json.huff" OUTPUT="./bin/faker.json" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/faker.zip.huff" OUTPUT="./bin/faker.zip" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/symbol_1.huff" OUTPUT="./bin/symbol_1.txt" SUBCOMMAND="decompress"
+          make production/debug/headless INPUT="./bin/symbol_100.huff" OUTPUT="./bin/symbol_100.txt" SUBCOMMAND="decompress"

@@ -66,10 +66,21 @@ lint: $(SRC) $(SRCTEST)
 	@rm -f ./$(SRCDIR)/*.c~ ./$(SRCDIR)/**/*.c~
 	@rm -f ./$(TESTDIR)/$(SRCDIR)/*.c~ ./$(TESTDIR)/$(SRCDIR)/**/*.c~
 
-debug: $(TESTDIR)/$(BINDIR)/$(TEST)
+production/debug: $(INPUT) build
+	$(DEBUG) -s $(DFLAGS) $(BINDIR)/$(EXEC) $(SUBCOMMAND) $(INPUT) $(OUTPUT) 2>&1 | tee $(BINDIR)/.valgrind.rpt
+
+production/debug/headless: $(INPUT) build
+	$(DEBUG) -s $(DFLAGS) $(BINDIR)/$(EXEC) $(SUBCOMMAND) $(INPUT) $(OUTPUT) 2>&1 | tee $(BINDIR)/.valgrind.rpt | \
+		grep -q "All heap blocks were freed -- no leaks are possible"; \
+		if [ $$? -ne 0 ]; then \
+			echo "Memory leaks detected!"; \
+			exit 1; \
+		fi;
+
+debug: build/lib $(TESTDIR)/$(BINDIR)/$(TEST)
 	@$(DEBUG) -s $(DFLAGS) $(TESTDIR)/$(BINDIR)/$(TEST) 2>&1 | tee $(TESTDIR)/$(BINDIR)/.valgrind.rpt
 
-debug/headless: $(TESTDIR)/$(BINDIR)/$(TEST)
+debug/headless: build/lib $(TESTDIR)/$(BINDIR)/$(TEST)
 	@$(DEBUG) -s $(DFLAGS) $(TESTDIR)/$(BINDIR)/$(TEST) 2>&1 | tee $(TESTDIR)/$(BINDIR)/.valgrind.rpt | \
 		grep -q "All heap blocks were freed -- no leaks are possible"; \
 		if [ $$? -ne 0 ]; then \
@@ -131,7 +142,9 @@ clean/docs:
 	@rm -rf ./$(DOCSDIR)
 
 clean/debug:
+	@rm -f ./$(BINDIR)/*
 	@rm -f ./$(BINDIR)/.valgrind.rpt
+	@rm -f ./$(TESTDIR)/$(BINDIR)/.valgrind.rpt
 
 clean/coverage:
 	@rm -rf ./$(COVDIR)
